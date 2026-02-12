@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Shitty Flappybird Alternative by Caleb D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a1a2e;
+            font-family: 'Arial', sans-serif;
+        }
+        #gameContainer {
+            position: relative;
+            border: 4px solid #4a90d9;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(74, 144, 217, 0.3);
+        }
+        canvas {
+            display: block;
+            border-radius: 6px;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            display: none;
+            z-index: 20;
+        }
+        #gameOver h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+        }
+        #gameOver p {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #restartBtn {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: linear-gradient(180deg, #4a90d9, #2c5aa0);
+            color: white;
+            border: 3px solid #6ab0ff;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        #restartBtn:hover {
+            background: linear-gradient(180deg, #6ab0ff, #4a90d9);
+            transform: scale(1.05);
+        }
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 20;
+        }
+        #startScreen h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+        }
+        #startScreen p {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+        #startBtn {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: linear-gradient(180deg, #4a90d9, #2c5aa0);
+            color: white;
+            border: 3px solid #6ab0ff;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        #startBtn:hover {
+            background: linear-gradient(180deg, #6ab0ff, #4a90d9);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="480" height="640"></canvas>
+        <div id="score">0</div>
+        <div id="startScreen">
+            <h1>The Shitty Flappybird<br>Alternative by Caleb D</h1>
+            <p>Press SPACE or Click to Flap!</p>
+            <button id="startBtn">START GAME</button>
+        </div>
+        <div id="gameOver">
+            <h2>GAME OVER</h2>
+            <p>Score: <span id="finalScore">0</span></p>
+            <button id="restartBtn">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverScreen = document.getElementById('gameOver');
+        const startScreen = document.getElementById('startScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
+        const startBtn = document.getElementById('startBtn');
+
+        let gameRunning = false;
+        let score = 0;
+        let animationId;
+
+        // Game constants
+        const GRAVITY = 0.5;
+        const FLAP_STRENGTH = -9;
+        const PIPE_WIDTH = 60;
+        const PIPE_GAP = 160;
+        const PIPE_SPEED = 3;
+        const PIPE_SPAWN_RATE = 1800;
+
+        // Penguin
+        const penguin = {
+            x: 80,
+            y: 320,
+            width: 40,
+            height: 50,
+            velocity: 0,
+            rotation: 0
+        };
+
+        // Pipes array
+        let pipes = [];
+        let lastPipeSpawn = 0;
+
+        // Sun position
+        const sun = {
+            x: 420,
+            y: 60,
+            radius: 40
+        };
+
+        // Draw sky gradient
+        function drawSky() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#FF8C00');
+            gradient.addColorStop(0.5, '#FFA500');
+            gradient.addColorStop(1, '#FFD700');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Draw sun
+        function drawSun() {
+            // Glow effect
+            const glowGradient = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, sun.radius * 2);
+            glowGradient.addColorStop(0, 'rgba(0, 255, 255, 0.8)');
+            glowGradient.addColorStop(0.5, 'rgba(0, 255, 255, 0.3)');
+            glowGradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, sun.radius * 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sun core
+            ctx.fillStyle = '#00FFFF';
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw penguin
+        function drawPenguin() {
+            ctx.save();
+            ctx.translate(penguin.x + penguin.width / 2, penguin.y + penguin.height / 2);
+            ctx.rotate(penguin.rotation);
+
+            // Body
+            ctx.fillStyle = '#2196F3';
+            ctx.beginPath();
+            ctx.ellipse(0, 5, penguin.width / 2 - 5, penguin.height / 2 - 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // White belly
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.ellipse(0, 8, penguin.width / 2 - 12, penguin.height / 2 - 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(-8, -12, 8, 0, Math.PI * 2);
+            ctx.arc(8, -12, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(-8, -12, 4, 0, Math.PI * 2);
+            ctx.arc(8, -12, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Beak
+            ctx.fillStyle = '#FF9800';
+            ctx.beginPath();
+            ctx.moveTo(-5, -4);
+            ctx.lineTo(5, -4);
+            ctx.lineTo(0, 6);
+            ctx.closePath();
+            ctx.fill();
+
+            // Feet
+            ctx.fillStyle = '#FF9800';
+            ctx.beginPath();
+            ctx.ellipse(-10, penguin.height / 2 - 5, 8, 4, 0, 0, Math.PI * 2);
+            ctx.ellipse(10, penguin.height / 2 - 5, 8, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Wing
+            ctx.fillStyle = '#1976D2';
+            ctx.beginPath();
+            ctx.ellipse(-12, 5, 6, 15, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(12, 5, 6, 15, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // Draw ice pipe
+        function drawPipe(pipe) {
+            const topPipeHeight = pipe.topHeight;
+            const bottomPipeY = topPipeHeight + PIPE_GAP;
+
+            // Ice pipe gradient
+            const iceGradient = ctx.createLinearGradient(pipe.x, 0, pipe.x + PIPE_WIDTH, 0);
+            iceGradient.addColorStop(0, 'rgba(135, 206, 235, 0.9)');
+            iceGradient.addColorStop(0.3, 'rgba(200, 230, 255, 0.95)');
+            iceGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)');
+            iceGradient.addColorStop(0.7, 'rgba(200, 230, 255, 0.95)');
+            iceGradient.addColorStop(1, 'rgba(135, 206, 235, 0.9)');
+
+            // Top pipe
+            ctx.fillStyle = iceGradient;
+            ctx.fillRect(pipe.x, 0, PIPE_WIDTH, topPipeHeight);
+
+            // Top pipe cap
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(pipe.x - 5, topPipeHeight - 25, PIPE_WIDTH + 10, 25);
+
+            // Ice highlights
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.fillRect(pipe.x + 5, 0, 8, topPipeHeight - 30);
+
+            // Bottom pipe
+            ctx.fillStyle = iceGradient;
+            ctx.fillRect(pipe.x, bottomPipeY, PIPE_WIDTH, canvas.height - bottomPipeY);
+
+            // Bottom pipe cap
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(pipe.x - 5, bottomPipeY, PIPE_WIDTH + 10, 25);
+
+            // Ice highlights
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.fillRect(pipe.x + 5, bottomPipeY + 30, 8, canvas.height - bottomPipeY - 30);
+
+            // Ice cracks/texture
+            ctx.strokeStyle = 'rgba(135, 206, 235, 0.5)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(pipe.x + 15 + i * 15, 10);
+                ctx.lineTo(pipe.x + 20 + i * 15, 30);
+                ctx.stroke();
+            }
+        }
+
+        // Check collision
+        function checkCollision(pipe) {
+            const penguinLeft = penguin.x;
+            const penguinRight = penguin.x + penguin.width - 10;
+            const penguinTop = penguin.y + 5;
+            const penguinBottom = penguin.y + penguin.height - 5;
+
+            const topPipeBottom = pipe.topHeight;
+            const bottomPipeTop = pipe.topHeight + PIPE_GAP;
+
+            // Check horizontal overlap
+            if (penguinRight > pipe.x && penguinLeft < pipe.x + PIPE_WIDTH) {
+                // Check vertical collision (top pipe or bottom pipe)
+                if (penguinTop < topPipeBottom || penguinBottom > bottomPipeTop) {
+                    return true;
+                }
+            }
+
+            // Check ground/ceiling collision
+            if (penguinBottom >= canvas.height || penguinTop <= 0) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // Update game
+        function update(timestamp) {
+            if (!gameRunning) return;
+
+            // Apply gravity
+            penguin.velocity += GRAVITY;
+            penguin.y += penguin.velocity;
+
+            // Rotate penguin based on velocity
+            penguin.rotation = Math.min(Math.max(penguin.velocity * 0.05, -0.5), 0.5);
+
+            // Spawn pipes
+            if (timestamp - lastPipeSpawn > PIPE_SPAWN_RATE) {
+                const minHeight = 80;
+                const maxHeight = canvas.height - PIPE_GAP - 80;
+                const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+
+                pipes.push({
+                    x: canvas.width,
+                    topHeight: topHeight,
+                    passed: false
+                });
+                lastPipeSpawn = timestamp;
+            }
+
+            // Update pipes
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= PIPE_SPEED;
+
+                // Check if passed
+                if (!pipes[i].passed && pipes[i].x + PIPE_WIDTH < penguin.x) {
+                    pipes[i].passed = true;
+                    score++;
+                    scoreDisplay.textContent = score;
+                }
+
+                // Check collision
+                if (checkCollision(pipes[i])) {
+                    gameOver();
+                    return;
+                }
+
+                // Remove off-screen pipes
+                if (pipes[i].x + PIPE_WIDTH < 0) {
+                    pipes.splice(i, 1);
+                }
+            }
+
+            draw();
+            animationId = requestAnimationFrame(update);
+        }
+
+        // Draw everything
+        function draw() {
+            drawSky();
+            drawSun();
+
+            // Draw pipes
+            pipes.forEach(pipe => drawPipe(pipe));
+
+            // Draw penguin
+            drawPenguin();
+        }
+
+        // Flap
+        function flap() {
+            if (!gameRunning) return;
+            penguin.velocity = FLAP_STRENGTH;
+        }
+
+        // Start game
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            scoreDisplay.textContent = score;
+            penguin.y = 320;
+            penguin.velocity = 0;
+            penguin.rotation = 0;
+            pipes = [];
+            lastPipeSpawn = 0;
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'none';
+            animationId = requestAnimationFrame(update);
+        }
+
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            finalScoreDisplay.textContent = score;
+            gameOverScreen.style.display = 'block';
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameRunning) {
+                    flap();
+                }
+            }
+        });
+
+        canvas.addEventListener('click', () => {
+            if (gameRunning) {
+                flap();
+            }
+        });
+
+        restartBtn.addEventListener('click', startGame);
+        startBtn.addEventListener('click', startGame);
+
+        // Initial draw
+        draw();
+    </script>
+</body>
+</html>
