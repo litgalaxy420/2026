@@ -64,12 +64,12 @@ public class HuntThemDown {
     
     private static void printBanner() {
         System.out.println(DARK_GREEN + "╔═══════════════════════════════════════════════════════════════╗" + RESET);
-        System.out.println(DARK_GREEN + "║" + DARK_PINK + "  ██████╗  █████╗ ███╗   ███╗███████╗    ███████╗ █████╗  ██████╗" + DARK_GREEN + "  ║" + RESET);
-        System.out.println(DARK_GREEN + "║" + DARK_PINK + " ██╔════╝ ██╔══██╗████╗ ████║██╔════╝    ██╔════╝██╔══██╗██╔════╝" + DARK_GREEN + "  ║" + RESET);
-        System.out.println(DARK_GREEN + "║" + DARK_PINK + " ██║  ███╗███████║██╔████╔██║█████╗      █████╗  ███████║██║     " + DARK_GREEN + "  ║" + RESET);
-        System.out.println(DARK_GREEN + "║" + DARK_PINK + " ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ██╔══╝  ██╔══██║██║     " + DARK_GREEN + "  ║" + RESET);
-        System.out.println(DARK_GREEN + "║" + DARK_PINK + " ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ███████╗██║  ██║╚██████╗" + DARK_GREEN + "  ║" + RESET);
-        System.out.println(DARK_GREEN + "║" + DARK_PINK + "  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝    ╚══════╝╚═╝  ╚═╝ ╚═════╝" + DARK_GREEN + "  ║" + RESET);
+        System.out.println(DARK_GREEN + "║" + DARK_PINK + "  ██████╗  █████╗ ███╗   ███╗███████╗    " + DARK_GREEN + "  ║" + RESET);
+        System.out.println(DARK_GREEN + "║" + DARK_PINK + " ██╔════╝ ██╔══██╗████╗ ████║██╔════╝    " + DARK_GREEN + "  ║" + RESET);
+        System.out.println(DARK_GREEN + "║" + DARK_PINK + " ██║  ███╗███████║██╔████╔██║█████╗      " + DARK_GREEN + "  ║" + RESET);
+        System.out.println(DARK_GREEN + "║" + DARK_PINK + " ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      " + DARK_GREEN + "  ║" + RESET);
+        System.out.println(DARK_GREEN + "║" + DARK_PINK + " ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    " + DARK_GREEN + "  ║" + RESET);
+        System.out.println(DARK_GREEN + "║" + DARK_PINK + "  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝    " + DARK_GREEN + "  ║" + RESET);
         System.out.println(DARK_GREEN + "║" + WHITE + "                    " + BOLD + "ZoomEye Vulnerability Scanner" + RESET + WHITE + "                     " + DARK_GREEN + "║" + RESET);
         System.out.println(DARK_GREEN + "║" + PINK + "                       Created by: " + AUTHOR + RESET + PINK + "                            " + DARK_GREEN + "║" + RESET);
         System.out.println(DARK_GREEN + "║" + CYAN + "                       Version: " + VERSION + RESET + CYAN + "                              " + DARK_GREEN + "║" + RESET);
